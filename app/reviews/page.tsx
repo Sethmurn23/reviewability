@@ -10,10 +10,10 @@ import {
   defaultSettings,
   regenerateResponse 
 } from '../../lib/automation';
-import type { Review } from '../../lib/integrations/types';
+import { automationRunner } from '../../lib/automation-runner';
 
 // Initial mock data
-const initialReviews: Review[] = [
+const initialReviews = [
   { id: '1', authorName: 'Sarah Johnson', rating: 5, content: 'The team went above and beyond to help me. Will definitely come back!', source: 'google', strategy: 'appreciation', severity: 'low', reason: '5-star review with strong positive language', status: 'auto_replied', draftResponse: 'Thank you so much for your wonderful review!', createdAt: '2026-03-23' },
   { id: '2', authorName: 'Mike Chen', rating: 2, content: 'Waited 45 minutes. Cold food. Very frustrating.', source: 'yelp', strategy: 'recovery', severity: 'high', reason: '2-star review with service complaint', status: 'needs_approval', draftResponse: 'We sincerely apologize for your experience.', createdAt: '2026-03-22' },
   { id: '3', authorName: 'Emily Davis', rating: 4, content: 'Great product overall. Shipping was fast but packaging could use improvement.', source: 'trustpilot', strategy: 'clarification', severity: 'medium', reason: '4-star review with mixed feedback', status: 'draft', draftResponse: 'Thank you for your feedback.', createdAt: '2026-03-21' },
@@ -42,7 +42,11 @@ export default function ReviewsPage() {
   const [search, setSearch] = useState('');
   const [starFilter, setStarFilter] = useState<number | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [simulating, setSimulating] = useState(false);
+
+  // Initialize automation
+  useState(() => {
+    automationRunner.initialize(initialReviews, defaultSettings, 'Your Business');
+  });
 
   // Filter reviews
   const filtered = reviews
@@ -64,16 +68,6 @@ export default function ReviewsPage() {
     needsApproval: reviews.filter(r => r.status === 'needs_approval').length,
     autoHandled: reviews.filter(r => r.status === 'auto_replied').length,
     total: reviews.length,
-  };
-
-  // Run simulation
-  const runSimulation = () => {
-    setSimulating(true);
-    setTimeout(() => {
-      const result = simulateAutomation(reviews as any, defaultSettings, 'Your Business');
-      setReviews(result.processed as any);
-      setSimulating(false);
-    }, 1500);
   };
 
   // Regenerate with modification
@@ -103,13 +97,6 @@ export default function ReviewsPage() {
             <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '8px' }}>Reviews Inbox</h1>
             <p className="text-muted">AI-powered review management with automation</p>
           </div>
-          <button 
-            className="btn btn-primary" 
-            onClick={runSimulation}
-            disabled={simulating}
-          >
-            {simulating ? '⚙️ Running...' : '▶️ Simulate Automation'}
-          </button>
         </div>
 
         {/* Helper Text */}
@@ -184,23 +171,27 @@ export default function ReviewsPage() {
                 key={review.id} 
                 review={review}
                 onApprove={handleApprove}
-                onRegenerate={handleRegenerate}
+                onRegenerate={handleRegenerate as any}
               />
             ))}
           </div>
         )}
 
-        {/* Auto-Handled Section */}
+        {/* Auto-Handled Section with Preview */}
         {autoHandled.length > 0 && (
           <div style={{ marginBottom: '40px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: '#6366f1' }}>🤖</span> Auto-Handled ({autoHandled.length})
+              <span style={{ color: '#6366f1' }}>🤖</span> Auto-Handled Preview ({autoHandled.length})
             </h2>
+            <p className="text-muted" style={{ fontSize: '13px', marginBottom: '16px' }}>
+              These would have been automatically posted to the review platforms:
+            </p>
             
             {autoHandled.map((review) => (
               <ReviewCard 
                 key={review.id} 
                 review={review}
+                showAutoPreview
               />
             ))}
           </div>
@@ -218,7 +209,7 @@ export default function ReviewsPage() {
                 key={review.id} 
                 review={review}
                 onApprove={handleApprove}
-                onRegenerate={handleRegenerate}
+                onRegenerate={handleRegenerate as any}
               />
             ))
           ) : (
@@ -246,11 +237,13 @@ export default function ReviewsPage() {
 function ReviewCard({ 
   review, 
   onApprove, 
-  onRegenerate 
+  onRegenerate,
+  showAutoPreview = false 
 }: { 
-  review: Review; 
+  review: any; 
   onApprove?: (id: string) => void;
   onRegenerate?: (id: string, modification: string) => void;
+  showAutoPreview?: boolean;
 }) {
   const [response, setResponse] = useState(review.draftResponse || '');
   
@@ -258,6 +251,20 @@ function ReviewCard({
   
   return (
     <div className="card" style={{ marginBottom: '16px', borderLeft: `4px solid ${severityColors[review.severity || 'low']}` }}>
+      {/* Auto-preview banner */}
+      {showAutoPreview && (
+        <div style={{ 
+          background: 'rgba(99, 102, 241, 0.1)', 
+          padding: '8px 12px', 
+          borderRadius: '6px', 
+          marginBottom: '12px',
+          fontSize: '12px',
+          color: '#6366f1'
+        }}>
+          💡 This would have been automatically posted
+        </div>
+      )}
+      
       {/* Header */}
       <div className="flex flex-between" style={{ marginBottom: '12px' }}>
         <div className="flex gap-2" style={{ alignItems: 'center' }}>
@@ -335,7 +342,7 @@ function ReviewCard({
         
         {/* Suggested AI Response */}
         <label style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-          Suggested Response:
+          {showAutoPreview ? 'Auto-generated response:' : 'Suggested Response:'}
         </label>
         <textarea 
           value={response}

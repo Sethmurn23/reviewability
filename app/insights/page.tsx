@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import { generateBasicInsights, analyzeKeywordFrequency, calculateSentimentDistribution } from '../../lib/insights-engine';
-import type { Review } from '../../lib/integrations/types';
 
 // Mock reviews for insights
-const mockReviews: Review[] = [
+const mockReviews = [
   { id: '1', authorName: 'Sarah Johnson', rating: 5, content: 'The team went above and beyond to help me. Amazing service! Will definitely come back!', source: 'google', strategy: 'appreciation', severity: 'low', status: 'auto_replied', createdAt: '2026-03-23' },
   { id: '2', authorName: 'Mike Chen', rating: 2, content: 'Waited 45 minutes. Cold food. Very rude staff. Very frustrating terrible experience.', source: 'yelp', strategy: 'recovery', severity: 'high', status: 'needs_approval', createdAt: '2026-03-22' },
   { id: '3', authorName: 'Emily Davis', rating: 4, content: 'Great product overall. Shipping was fast but packaging could use improvement.', source: 'trustpilot', strategy: 'clarification', severity: 'medium', status: 'draft', createdAt: '2026-03-21' },
@@ -17,12 +16,18 @@ const mockReviews: Review[] = [
 ];
 
 export default function InsightsPage() {
-  const [reviews] = useState<Review[]>(mockReviews);
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
   // Run analysis
-  const insights = generateBasicInsights(reviews);
-  const keywords = analyzeKeywordFrequency(reviews);
-  const distribution = calculateSentimentDistribution(reviews);
+  const insights = generateBasicInsights(mockReviews);
+  const keywords = analyzeKeywordFrequency(mockReviews);
+  const distribution = calculateSentimentDistribution(mockReviews);
+
+  const handleAction = (action: string) => {
+    setSelectedAction(action);
+    setShowActionModal(true);
+  };
 
   return (
     <div>
@@ -31,9 +36,25 @@ export default function InsightsPage() {
         <div className="flex flex-between" style={{ marginBottom: '32px' }}>
           <div>
             <h1 style={{ fontSize: '28px', fontWeight: 800 }}>Insights</h1>
-            <p className="text-muted">AI-powered analysis from {reviews.length} reviews</p>
+            <p className="text-muted">AI-powered analysis from {mockReviews.length} reviews</p>
           </div>
           <button className="btn btn-secondary">Export All</button>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="card mb-4" style={{ borderLeft: '4px solid #6366f1' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>⚡ Quick Actions</h2>
+          <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+            <button className="btn btn-primary" onClick={() => handleAction('automation')}>
+              ⚙️ Adjust Automation
+            </button>
+            <button className="btn btn-secondary" onClick={() => handleAction('threshold')}>
+              📊 Increase Approval Threshold
+            </button>
+            <button className="btn btn-secondary" onClick={() => handleAction('focus')}>
+              🎯 Focus on Issue
+            </button>
+          </div>
         </div>
 
         {/* Sentiment Distribution */}
@@ -43,17 +64,17 @@ export default function InsightsPage() {
             <div className="card" style={{ textAlign: 'center', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid #22c55e' }}>
               <div style={{ fontSize: '32px', fontWeight: 800, color: '#22c55e' }}>{distribution.positive}</div>
               <div className="text-muted" style={{ fontSize: '13px' }}>Positive (4-5 stars)</div>
-              <div style={{ fontSize: '12px', color: '#22c55e' }}>{Math.round((distribution.positive / reviews.length) * 100)}%</div>
+              <div style={{ fontSize: '12px', color: '#22c55e' }}>{Math.round((distribution.positive / mockReviews.length) * 100)}%</div>
             </div>
             <div className="card" style={{ textAlign: 'center', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid #f59e0b' }}>
               <div style={{ fontSize: '32px', fontWeight: 800, color: '#f59e0b' }}>{distribution.neutral}</div>
               <div className="text-muted" style={{ fontSize: '13px' }}>Neutral (3 stars)</div>
-              <div style={{ fontSize: '12px', color: '#f59e0b' }}>{Math.round((distribution.neutral / reviews.length) * 100)}%</div>
+              <div style={{ fontSize: '12px', color: '#f59e0b' }}>{Math.round((distribution.neutral / mockReviews.length) * 100)}%</div>
             </div>
             <div className="card" style={{ textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444' }}>
               <div style={{ fontSize: '32px', fontWeight: 800, color: '#ef4444' }}>{distribution.negative}</div>
               <div className="text-muted" style={{ fontSize: '13px' }}>Negative (1-2 stars)</div>
-              <div style={{ fontSize: '12px', color: '#ef4444' }}>{Math.round((distribution.negative / reviews.length) * 100)}%</div>
+              <div style={{ fontSize: '12px', color: '#ef4444' }}>{Math.round((distribution.negative / mockReviews.length) * 100)}%</div>
             </div>
           </div>
         </div>
@@ -128,6 +149,13 @@ export default function InsightsPage() {
             </div>
             <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px', color: '#ef4444' }}>{insights.topComplaint}</h3>
             <p style={{ color: 'var(--text-muted)', lineHeight: 1.6 }}>{insights.recommendation}</p>
+            <button 
+              className="btn btn-secondary" 
+              style={{ marginTop: '12px' }}
+              onClick={() => handleAction('focus')}
+            >
+              🎯 Focus on Issue
+            </button>
           </div>
         )}
 
@@ -174,6 +202,42 @@ export default function InsightsPage() {
             {insights.summary}
           </p>
         </div>
+
+        {/* Action Modal */}
+        {showActionModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}>
+            <div className="card" style={{ maxWidth: '500px', width: '90%' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
+                {selectedAction === 'automation' && '⚙️ Adjust Automation'}
+                {selectedAction === 'threshold' && '📊 Increase Approval Threshold'}
+                {selectedAction === 'focus' && '🎯 Focus on Issue'}
+              </h2>
+              <p className="text-muted" style={{ fontSize: '14px', marginBottom: '20px' }}>
+                This would adjust your automation settings to better handle this insight.
+                In a live system, this would update your automation rules automatically.
+              </p>
+              <div className="flex gap-2">
+                <button className="btn btn-primary" onClick={() => setShowActionModal(false)}>
+                  Confirm
+                </button>
+                <button className="btn btn-secondary" onClick={() => setShowActionModal(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
