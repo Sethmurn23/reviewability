@@ -19,12 +19,18 @@ export default function SettingsPage() {
     setSettings({ ...settings, [key]: value });
   };
 
-  // Integration status - in demo mode these are all "Coming soon"
+  // Integration status - Google is now "Coming soon" with more detail
   const integrations = [
-    { name: 'Google Business', status: 'coming_soon', description: 'Connect your Google Business profile' },
-    { name: 'Yelp', status: 'coming_soon', description: 'Import reviews from Yelp' },
-    { name: 'Trustpilot', status: 'coming_soon', description: 'Sync reviews from Trustpilot' },
-    { name: 'Facebook', status: 'coming_soon', description: 'Import Facebook reviews' },
+    { 
+      name: 'Google Business Profile', 
+      status: 'coming_soon', 
+      description: 'Import and manage Google reviews inside Reviewability',
+      icon: '🔍',
+      buttonLabel: 'Connect Google',
+    },
+    { name: 'Yelp', status: 'coming_soon', description: 'Import reviews from Yelp', icon: '📋', buttonLabel: 'Coming soon' },
+    { name: 'Trustpilot', status: 'coming_soon', description: 'Sync reviews from Trustpilot', icon: '⭐', buttonLabel: 'Coming soon' },
+    { name: 'Facebook', status: 'coming_soon', description: 'Import Facebook reviews', icon: '📘', buttonLabel: 'Coming soon' },
   ];
 
   const statusLabels: Record<string, { label: string; color: string }> = {
@@ -131,14 +137,60 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Integrations - Truthful Labels */}
+        {/* Integrations - Google First & Prominent */}
         <div className="card mb-4">
           <h2 style={{ fontSize: '18px', marginBottom: '20px' }}>🔌 Integrations</h2>
           <p className="text-muted" style={{ fontSize: '13px', marginBottom: '16px' }}>
             Connect your review platforms to import and manage reviews in one place.
           </p>
+          
+          {/* Google - Featured */}
+          <div style={{ 
+            marginBottom: '20px',
+            padding: '20px', 
+            background: 'linear-gradient(135deg, rgba(66, 133, 244, 0.1) 0%, rgba(52, 168, 83, 0.1) 100%)', 
+            borderRadius: '12px',
+            border: '1px solid rgba(66, 133, 244, 0.3)'
+          }}>
+            <div className="flex flex-between" style={{ alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '20px' }}>🔍</span> Google Business Profile
+                  <span style={{
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    background: 'rgba(245, 158, 11, 0.2)',
+                    color: '#f59e0b',
+                  }}>
+                    COMING SOON
+                  </span>
+                </div>
+                <div className="text-muted" style={{ fontSize: '13px', marginBottom: '12px' }}>
+                  Import and manage Google reviews inside Reviewability
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  • Automatic review sync • Response directly on Google • Multi-location support
+                </div>
+              </div>
+              <button 
+                className="btn btn-primary" 
+                style={{ 
+                  background: '#4285f4', 
+                  opacity: 0.6,
+                  cursor: 'not-allowed'
+                }}
+                disabled
+              >
+                Coming Soon
+              </button>
+            </div>
+          </div>
+          
+          {/* Other Integrations */}
           <div className="grid gap-4">
-            {integrations.map(platform => (
+            {integrations.slice(1).map(platform => (
               <div key={platform.name} className="flex flex-between" style={{ 
                 padding: '16px', 
                 background: 'var(--bg)', 
@@ -146,7 +198,9 @@ export default function SettingsPage() {
                 border: '1px solid var(--border)'
               }}>
                 <div>
-                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>{platform.name}</div>
+                  <div style={{ fontWeight: 600, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>{platform.icon}</span> {platform.name}
+                  </div>
                   <div className="text-muted" style={{ fontSize: '12px' }}>{platform.description}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
