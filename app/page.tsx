@@ -31,8 +31,8 @@ export default function HomePage() {
             marginBottom: '40px',
             lineHeight: 1.6,
           }}>
-            Aggregate reviews from Google, Yelp, Trustpilot & more.<br/>
-            AI analyzes sentiment, detects urgency, and auto-generates responses.
+            Import and manage reviews from multiple platforms.<br/>
+            AI analyzes sentiment and generates response drafts for your approval.
           </p>
           <div className="flex gap-4" style={{ justifyContent: 'center' }}>
             <Link href="/dashboard" className="btn btn-primary" style={{
@@ -62,8 +62,8 @@ export default function HomePage() {
           <div className="grid grid-3">
             {[
               { icon: '📊', title: 'Unified Dashboard', desc: 'See all reviews from every platform in one place' },
-              { icon: '🤖', title: 'AI Analysis', desc: 'Sentiment, urgency, and topic detection automatically' },
-              { icon: '⚡', title: 'Auto Responses', desc: 'Generate professional responses in seconds' },
+              { icon: '🤖', title: 'AI Response Drafts', desc: 'AI generates personalized responses for your approval' },
+              { icon: '⚡', title: 'Automation Workflows', desc: 'Set up rules for auto-replies and alerts' },
               { icon: '💡', title: 'Smart Insights', desc: 'AI-powered trends and recommendations' },
               { icon: '🔔', title: 'Real-time Alerts', desc: 'Get notified about urgent reviews immediately' },
               { icon: '📈', title: 'Analytics', desc: 'Track ratings, sentiment, and trends over time' },
@@ -102,8 +102,9 @@ export default function HomePage() {
               <ul style={{ listStyle: 'none', textAlign: 'left', marginBottom: '20px', fontSize: '14px' }} className="text-muted">
                 <li>✓ Unlimited businesses</li>
                 <li>✓ Unlimited reviews</li>
-                <li>✓ AI responses</li>
-                <li>✓ Auto-automation</li>
+                <li>✓ AI response drafts</li>
+                <li>✓ Automation workflows</li>
+                <li>✓ Approval queue</li>
                 <li>✓ Priority support</li>
               </ul>
               <Link href="/dashboard" className="btn btn-primary" style={{ width: '100%' }}>Start Trial</Link>

@@ -34,6 +34,14 @@ export default function Navbar() {
           gap: '8px',
         }}>
           <span>🤖</span> Reviewability
+          <span style={{
+            background: '#f59e0b',
+            color: '#000',
+            fontSize: '10px',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            fontWeight: 700,
+          }}>DEMO</span>
         </Link>
 
         <div className="flex gap-2" style={{ display: 'flex', gap: '8px' }}>

@@ -19,6 +19,20 @@ export default function SettingsPage() {
     setSettings({ ...settings, [key]: value });
   };
 
+  // Integration status - in demo mode these are all "Coming soon"
+  const integrations = [
+    { name: 'Google Business', status: 'coming_soon', description: 'Connect your Google Business profile' },
+    { name: 'Yelp', status: 'coming_soon', description: 'Import reviews from Yelp' },
+    { name: 'Trustpilot', status: 'coming_soon', description: 'Sync reviews from Trustpilot' },
+    { name: 'Facebook', status: 'coming_soon', description: 'Import Facebook reviews' },
+  ];
+
+  const statusLabels: Record<string, { label: string; color: string }> = {
+    connected: { label: 'Connected', color: '#22c55e' },
+    not_connected: { label: 'Not connected', color: '#94a3b8' },
+    coming_soon: { label: 'Coming soon', color: '#f59e0b' },
+  };
+
   return (
     <div>
       <Navbar />
@@ -117,30 +131,66 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Integrations */}
+        {/* Integrations - Truthful Labels */}
         <div className="card mb-4">
-          <h2 style={{ fontSize: '18px', marginBottom: '20px' }}>Integrations</h2>
+          <h2 style={{ fontSize: '18px', marginBottom: '20px' }}>🔌 Integrations</h2>
+          <p className="text-muted" style={{ fontSize: '13px', marginBottom: '16px' }}>
+            Connect your review platforms to import and manage reviews in one place.
+          </p>
           <div className="grid gap-4">
-            {['Google Business', 'Yelp', 'Trustpilot', 'Facebook'].map(platform => (
-              <div key={platform} className="flex flex-between" style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-                <span style={{ fontWeight: 600 }}>{platform}</span>
-                <button className="btn btn-secondary" style={{ padding: '8px 16px' }}>Connect</button>
+            {integrations.map(platform => (
+              <div key={platform.name} className="flex flex-between" style={{ 
+                padding: '16px', 
+                background: 'var(--bg)', 
+                borderRadius: '8px',
+                border: '1px solid var(--border)'
+              }}>
+                <div>
+                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>{platform.name}</div>
+                  <div className="text-muted" style={{ fontSize: '12px' }}>{platform.description}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    background: `${statusLabels[platform.status].color}20`,
+                    color: statusLabels[platform.status].color,
+                  }}>
+                    {statusLabels[platform.status].label}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Billing */}
-        <div className="card">
-          <h2 style={{ fontSize: '18px', marginBottom: '20px' }}>Billing</h2>
-          <div className="flex flex-between">
+        {/* Billing - Demo State */}
+        <div className="card mb-4">
+          <div className="flex flex-between" style={{ marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '18px' }}>💳 Billing</h2>
+            <span style={{
+              padding: '4px 10px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: 600,
+              background: 'rgba(245, 158, 11, 0.2)',
+              color: '#f59e0b',
+            }}>
+              DEMO MODE
+            </span>
+          </div>
+          <p className="text-muted" style={{ fontSize: '13px', marginBottom: '16px' }}>
+            Billing integration is in demo mode. Connect Stripe to enable payments.
+          </p>
+          <div className="flex flex-between" style={{ padding: '16px', background: 'var(--bg)', borderRadius: '8px' }}>
             <div>
               <div style={{ fontWeight: 600 }}>Pro Plan</div>
-              <div className="text-muted" style={{ fontSize: '13px' }}>$29/month • Next billing: April 23, 2026</div>
+              <div className="text-muted" style={{ fontSize: '13px' }}>$29/month • Demo mode</div>
             </div>
             <div className="flex gap-2">
-              <button className="btn btn-secondary">Update Card</button>
-              <button className="btn btn-secondary" style={{ color: 'var(--danger)' }}>Cancel</button>
+              <button className="btn btn-secondary">Connect Stripe</button>
             </div>
           </div>
         </div>

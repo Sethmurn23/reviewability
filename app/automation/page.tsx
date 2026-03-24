@@ -4,20 +4,29 @@ import { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import ToggleSwitch from '../../components/ToggleSwitch';
 
-const mockAutomations = [
-  { id: '1', name: 'Reply to all positive reviews', trigger: 'rating >= 4', action: 'auto_respond', isActive: true, runCount: 156 },
-  { id: '2', name: 'Alert on 1-star reviews', trigger: 'rating = 1', action: 'send_email', isActive: true, runCount: 23 },
-  { id: '3', name: 'Auto-respond to complaints', trigger: 'sentiment = negative', action: 'generate_response', isActive: false, runCount: 0 },
-  { id: '4', name: 'Weekly digest', trigger: 'schedule = weekly', action: 'send_digest', isActive: true, runCount: 12 },
-];
+// Default safe automation settings
+const defaultSettings = {
+  autoReply5Star: true,
+  autoReply4Star: false,
+  requireApproval1to3Star: true,
+  businessHoursOnly: false,
+  ownerVoice: false,
+  toneDefault: 'professional',
+  goalDefault: 'maintain',
+};
 
 export default function AutomationPage() {
-  const [automations, setAutomations] = useState(mockAutomations);
+  const [settings, setSettings] = useState(defaultSettings);
 
-  const toggle = (id: string) => {
-    setAutomations(automations.map(a => 
-      a.id === id ? { ...a, isActive: !a.isActive } : a
-    ));
+  const automations = [
+    { id: '1', name: 'Reply to all positive reviews', trigger: 'rating >= 4', action: 'auto_respond', isActive: true, runCount: 156, description: 'Auto-reply to 4-5 star reviews with AI-generated response' },
+    { id: '2', name: 'Alert on 1-star reviews', trigger: 'rating = 1', action: 'send_email', isActive: true, runCount: 23, description: 'Email owner immediately when 1-star review received' },
+    { id: '3', name: 'Auto-respond to complaints', trigger: 'sentiment = negative', action: 'generate_response', isActive: false, runCount: 0, description: 'Generate response for negative reviews (requires approval)' },
+    { id: '4', name: 'Weekly digest', trigger: 'schedule = weekly', action: 'send_digest', isActive: true, runCount: 12, description: 'Send weekly summary of all review activity' },
+  ];
+
+  const updateSetting = (key: string, value: any) => {
+    setSettings({ ...settings, [key]: value });
   };
 
   return (
@@ -27,12 +36,92 @@ export default function AutomationPage() {
         <div className="flex flex-between" style={{ marginBottom: '32px' }}>
           <div>
             <h1 style={{ fontSize: '28px', fontWeight: 800 }}>Automation</h1>
-            <p className="text-muted">Automate your review responses and alerts</p>
+            <p className="text-muted">Configure your review response automation</p>
           </div>
           <button className="btn btn-primary">+ Create Automation</button>
         </div>
 
-        {/* Automations List */}
+        {/* Default Settings */}
+        <div className="card mb-4">
+          <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px' }}>⚙️ Default Settings</h2>
+          
+          <div className="grid grid-2 gap-4">
+            {/* Auto-reply positive reviews */}
+            <div className="flex flex-between" style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>Auto-reply to 5-star reviews</div>
+                <div className="text-muted" style={{ fontSize: '12px' }}>Automatically respond to positive reviews</div>
+              </div>
+              <ToggleSwitch enabled={settings.autoReply5Star} onChange={(v) => updateSetting('autoReply5Star', v)} />
+            </div>
+
+            <div className="flex flex-between" style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>Auto-reply to 4-star reviews</div>
+                <div className="text-muted" style={{ fontSize: '12px' }}>Optionally auto-respond to 4-star reviews</div>
+              </div>
+              <ToggleSwitch enabled={settings.autoReply4Star} onChange={(v) => updateSetting('autoReply4Star', v)} />
+            </div>
+
+            <div className="flex flex-between" style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>Require approval for 1-3 star reviews</div>
+                <div className="text-muted" style={{ fontSize: '12px' }}>Negative/mixed reviews need manual approval</div>
+              </div>
+              <ToggleSwitch enabled={settings.requireApproval1to3Star} onChange={(v) => updateSetting('requireApproval1to3Star', v)} />
+            </div>
+
+            <div className="flex flex-between" style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>Business hours only</div>
+                <div className="text-muted" style={{ fontSize: '12px' }}>Only run automations during business hours</div>
+              </div>
+              <ToggleSwitch enabled={settings.businessHoursOnly} onChange={(v) => updateSetting('businessHoursOnly', v)} />
+            </div>
+
+            <div className="flex flex-between" style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>Owner voice</div>
+                <div className="text-muted" style={{ fontSize: '12px' }}>Use business name instead of generic responses</div>
+              </div>
+              <ToggleSwitch enabled={settings.ownerVoice} onChange={(v) => updateSetting('ownerVoice', v)} />
+            </div>
+
+            <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ fontWeight: 600, marginBottom: '8px' }}>Default tone</div>
+              <select 
+                value={settings.toneDefault} 
+                onChange={(e) => updateSetting('toneDefault', e.target.value)}
+                style={{ maxWidth: '200px' }}
+              >
+                <option value="professional">Professional</option>
+                <option value="friendly">Friendly</option>
+                <option value="apologetic">Apologetic</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Guardrails help text */}
+          <div style={{ 
+            marginTop: '20px', 
+            padding: '16px', 
+            background: 'rgba(99, 102, 241, 0.1)', 
+            borderRadius: '8px',
+            border: '1px solid var(--primary)'
+          }}>
+            <div style={{ fontWeight: 600, marginBottom: '8px', color: 'var(--primary)' }}>💡 Automation Guardrails</div>
+            <ul style={{ fontSize: '13px', color: 'var(--text-muted)', paddingLeft: '20px' }}>
+              <li>Positive reviews (4-5 stars) can be safely auto-replied to increase engagement</li>
+              <li>Negative reviews (1-3 stars) should usually require approval to ensure proper handling</li>
+              <li>Automation can be limited to business hours to maintain quality control</li>
+              <li>Always review draft responses before they go live to protect your brand</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Active Automations */}
+        <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>📋 Active Automations</h2>
+        
         <div className="grid gap-4">
           {automations.map(automation => (
             <div key={automation.id} className="card">
@@ -50,7 +139,8 @@ export default function AutomationPage() {
                       {automation.isActive ? 'ACTIVE' : 'INACTIVE'}
                     </span>
                   </div>
-                  <div className="flex gap-4 text-muted" style={{ fontSize: '13px' }}>
+                  <p className="text-muted" style={{ fontSize: '13px', marginBottom: '8px' }}>{automation.description}</p>
+                  <div className="flex gap-4 text-muted" style={{ fontSize: '12px' }}>
                     <span>📌 {automation.trigger}</span>
                     <span>⚡ {automation.action}</span>
                     <span>📊 {automation.runCount} runs</span>
@@ -59,7 +149,7 @@ export default function AutomationPage() {
                 <div className="flex gap-2" style={{ alignItems: 'center' }}>
                   <ToggleSwitch 
                     enabled={automation.isActive} 
-                    onChange={() => toggle(automation.id)} 
+                    onChange={() => {}} 
                   />
                   <button className="btn btn-secondary" style={{ padding: '8px 12px' }}>Edit</button>
                 </div>
