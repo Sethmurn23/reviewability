@@ -3,17 +3,19 @@
 import { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import ToggleSwitch from '../../components/ToggleSwitch';
+import { defaultSettings, processReviewAutomation } from '../../lib/automation';
 
-// Default safe automation settings
-const defaultSettings = {
-  autoReply5Star: true,
-  autoReply4Star: false,
-  requireApproval1to3Star: true,
-  businessHoursOnly: false,
-  ownerVoice: false,
-  toneDefault: 'professional',
-  goalDefault: 'maintain',
-};
+// Convert status to settings
+function settingsToState(settings: typeof defaultSettings) {
+  return {
+    autoReply5Star: settings.autoReply5Star,
+    autoReply4Star: settings.autoReply4Star,
+    requireApproval1to3Star: settings.requireApproval1to3Star,
+    businessHoursOnly: settings.businessHoursOnly,
+    ownerVoice: settings.ownerVoice,
+    toneDefault: settings.toneDefault,
+  };
+}
 
 export default function AutomationPage() {
   const [settings, setSettings] = useState(defaultSettings);
@@ -36,7 +38,7 @@ export default function AutomationPage() {
         <div className="flex flex-between" style={{ marginBottom: '32px' }}>
           <div>
             <h1 style={{ fontSize: '28px', fontWeight: 800 }}>Automation</h1>
-            <p className="text-muted">Configure your review response automation</p>
+            <p className="text-muted">Configure your review response automation rules</p>
           </div>
           <button className="btn btn-primary">+ Create Automation</button>
         </div>
@@ -119,8 +121,28 @@ export default function AutomationPage() {
           </div>
         </div>
 
+        {/* Rule Preview */}
+        <div className="card mb-4">
+          <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>📋 Current Rules Summary</h2>
+          <div className="grid grid-2 gap-4">
+            <div style={{ padding: '12px', background: 'var(--bg)', borderRadius: '8px' }}>
+              <div style={{ fontWeight: 600, marginBottom: '8px', color: '#22c55e' }}>✅ Auto-handled</div>
+              <ul style={{ fontSize: '13px', color: 'var(--text-muted)', paddingLeft: '16px' }}>
+                {settings.autoReply5Star && <li>5-star reviews</li>}
+                {settings.autoReply4Star && <li>4-star reviews</li>}
+              </ul>
+            </div>
+            <div style={{ padding: '12px', background: 'var(--bg)', borderRadius: '8px' }}>
+              <div style={{ fontWeight: 600, marginBottom: '8px', color: '#f59e0b' }}>⏳ Requires approval</div>
+              <ul style={{ fontSize: '13px', color: 'var(--text-muted)', paddingLeft: '16px' }}>
+                {settings.requireApproval1to3Star && <li>1-3 star reviews</li>}
+              </ul>
+            </div>
+          </div>
+        </div>
+
         {/* Active Automations */}
-        <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>📋 Active Automations</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>🔧 Automation Workflows</h2>
         
         <div className="grid gap-4">
           {automations.map(automation => (

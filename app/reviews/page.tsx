@@ -2,37 +2,24 @@
 
 import { useState } from 'react';
 import Navbar from '../../components/Navbar';
+import { 
+  determineStrategy, 
+  calculateSeverity, 
+  generateResponse, 
+  simulateAutomation,
+  defaultSettings,
+  regenerateResponse 
+} from '../../lib/automation';
+import type { Review } from '../../lib/integrations/types';
 
-// Review type for normalized reviews
-interface Review {
-  id: string;
-  authorName: string;
-  rating: number;
-  title?: string;
-  content: string;
-  source: string; // google, yelp, trustpilot, manual
-  sourceId?: string;
-  locationId?: string;
-  sentiment?: string;
-  strategy?: string;
-  severity?: 'critical' | 'high' | 'medium' | 'low';
-  reason?: string;
-  status: 'draft' | 'needs_approval' | 'auto_replied' | 'resolved' | 'failed';
-  draftResponse?: string;
-  createdAt: string;
-  platformReplyId?: string;
-  responsePostedAt?: string;
-}
-
-// Mock reviews with normalized data
-const mockReviews: Review[] = [
-  { id: '1', authorName: 'Sarah Johnson', rating: 5, title: 'Amazing service!', content: 'The team went above and beyond to help me. Will definitely come back!', source: 'google', sentiment: 'positive', strategy: 'appreciation', severity: 'low', reason: '5-star review with strong positive language', status: 'auto_replied', draftResponse: 'Thank you so much for your wonderful review! We are thrilled to hear you had a great experience.', createdAt: '2026-03-23' },
-  { id: '2', authorName: 'Mike Chen', rating: 2, title: 'Disappointed', content: 'Waited 45 minutes. Cold food. Very frustrating.', source: 'yelp', sentiment: 'negative', strategy: 'recovery', severity: 'high', reason: '1-star review with service complaint', status: 'needs_approval', draftResponse: 'We sincerely apologize for your experience. This falls well below our standards.', createdAt: '2026-03-22' },
-  { id: '3', authorName: 'Emily Davis', rating: 4, content: 'Great product overall. Shipping was fast but packaging could use improvement.', source: 'trustpilot', sentiment: 'neutral', strategy: 'clarification', severity: 'medium', reason: '4-star review with mixed feedback', status: 'draft', draftResponse: 'Thank you for your feedback. We are glad shipping was fast.', createdAt: '2026-03-21' },
-  { id: '4', authorName: 'James Wilson', rating: 1, title: 'Never ordering again', content: 'Wrong order 3 times. Complete waste of money.', source: 'google', sentiment: 'negative', strategy: 'recovery', severity: 'critical', reason: '1-star review with repeated issue', status: 'needs_approval', draftResponse: 'I am deeply sorry for this terrible experience. This is unacceptable.', createdAt: '2026-03-20' },
-  { id: '5', authorName: 'Lisa Anderson', rating: 5, title: 'Perfect!', content: 'Exactly what I needed. Fast delivery too!', source: 'google', sentiment: 'positive', strategy: 'appreciation', severity: 'low', reason: '5-star review with strong positive language', status: 'resolved', draftResponse: 'WOW thank you so much! We are thrilled everything was perfect!', createdAt: '2026-03-19' },
-  { id: '6', authorName: 'Tom Harris', rating: 3, title: 'Average', content: 'It was okay. Nothing special but nothing wrong either.', source: 'yelp', sentiment: 'neutral', strategy: 'clarification', severity: 'medium', reason: '3-star review with neutral feedback', status: 'needs_approval', draftResponse: 'Thank you for your feedback. We appreciate your honesty.', createdAt: '2026-03-18' },
-  { id: '7', authorName: 'Anna Martinez', rating: 2, title: 'Not happy', content: 'Staff was rude. Waited forever. Very disappointing.', source: 'google', sentiment: 'negative', strategy: 'recovery', severity: 'high', reason: '2-star review with service complaint', status: 'failed', draftResponse: 'We apologize for your experience. This is not our standard.', createdAt: '2026-03-17' },
+// Initial mock data
+const initialReviews: Review[] = [
+  { id: '1', authorName: 'Sarah Johnson', rating: 5, content: 'The team went above and beyond to help me. Will definitely come back!', source: 'google', strategy: 'appreciation', severity: 'low', reason: '5-star review with strong positive language', status: 'auto_replied', draftResponse: 'Thank you so much for your wonderful review!', createdAt: '2026-03-23' },
+  { id: '2', authorName: 'Mike Chen', rating: 2, content: 'Waited 45 minutes. Cold food. Very frustrating.', source: 'yelp', strategy: 'recovery', severity: 'high', reason: '2-star review with service complaint', status: 'needs_approval', draftResponse: 'We sincerely apologize for your experience.', createdAt: '2026-03-22' },
+  { id: '3', authorName: 'Emily Davis', rating: 4, content: 'Great product overall. Shipping was fast but packaging could use improvement.', source: 'trustpilot', strategy: 'clarification', severity: 'medium', reason: '4-star review with mixed feedback', status: 'draft', draftResponse: 'Thank you for your feedback.', createdAt: '2026-03-21' },
+  { id: '4', authorName: 'James Wilson', rating: 1, content: 'Wrong order 3 times. Complete waste of money.', source: 'google', strategy: 'recovery', severity: 'critical', reason: '1-star review with repeated issue', status: 'needs_approval', draftResponse: 'I am deeply sorry for this terrible experience.', createdAt: '2026-03-20' },
+  { id: '5', authorName: 'Lisa Anderson', rating: 5, content: 'Exactly what I needed. Fast delivery too!', source: 'google', strategy: 'appreciation', severity: 'low', reason: '5-star review with positive language', status: 'resolved', draftResponse: 'WOW thank you so much!', createdAt: '2026-03-19' },
+  { id: '6', authorName: 'Tom Harris', rating: 3, content: 'It was okay. Nothing special but nothing wrong either.', source: 'yelp', strategy: 'clarification', severity: 'medium', reason: '3-star review with neutral feedback', status: 'needs_approval', draftResponse: 'Thank you for your feedback.', createdAt: '2026-03-18' },
 ];
 
 const severityColors: Record<string, string> = {
@@ -42,68 +29,88 @@ const severityColors: Record<string, string> = {
   low: '#22c55e',
 };
 
-const statusLabels: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Draft', color: '#94a3b8' },
-  needs_approval: { label: 'Needs Approval', color: '#f59e0b' },
-  auto_replied: { label: 'Auto-Replied', color: '#6366f1' },
-  resolved: { label: 'Resolved', color: '#22c55e' },
-  failed: { label: 'Failed', color: '#ef4444' },
-};
-
-const strategyLabels: Record<string, string> = {
-  recovery: 'Recovery',
-  appreciation: 'Appreciation',
-  clarification: 'Clarification',
-  defense: 'Defense',
+const statusLabels: Record<string, { label: string; color: string; icon: string }> = {
+  draft: { label: 'Draft', color: '#94a3b8', icon: '✏️' },
+  needs_approval: { label: 'Needs Approval', color: '#f59e0b', icon: '⏳' },
+  auto_replied: { label: 'Auto-handled', color: '#6366f1', icon: '🤖' },
+  resolved: { label: 'Resolved', color: '#22c55e', icon: '✓' },
+  failed: { label: 'Failed', color: '#ef4444', icon: '⚠️' },
 };
 
 export default function ReviewsPage() {
-  const [reviews] = useState<Review[]>(mockReviews);
+  const [reviews, setReviews] = useState<any[]>(initialReviews);
   const [search, setSearch] = useState('');
   const [starFilter, setStarFilter] = useState<number | 'all'>('all');
-  const [severityFilter, setSeverityFilter] = useState<string>('all');
-  const [strategyFilter, setStrategyFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('newest');
+  const [simulating, setSimulating] = useState(false);
 
-  // Calculate summary stats
-  const stats = {
-    needsApproval: reviews.filter(r => r.status === 'needs_approval').length,
-    autoRepliedToday: reviews.filter(r => r.status === 'auto_replied').length,
-    highSeverity: reviews.filter(r => r.severity === 'high' || r.severity === 'critical').length,
-    total: reviews.length,
-  };
-
-  // Filter and sort reviews
+  // Filter reviews
   const filtered = reviews
     .filter(r => {
       if (starFilter !== 'all' && r.rating !== starFilter) return false;
-      if (severityFilter !== 'all' && r.severity !== severityFilter) return false;
-      if (strategyFilter !== 'all' && r.strategy !== strategyFilter) return false;
       if (statusFilter !== 'all' && r.status !== statusFilter) return false;
       if (search && !r.content.toLowerCase().includes(search.toLowerCase()) && !r.authorName.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     })
-    .sort((a, b) => {
-      if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (sortBy === 'severity') {
-        const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-        return (severityOrder[b.severity || 'low'] || 0) - (severityOrder[a.severity || 'low'] || 0);
-      }
-      if (sortBy === 'rating_asc') return a.rating - b.rating;
-      if (sortBy === 'rating_desc') return b.rating - a.rating;
-      return 0;
-    });
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  // Separate needs approval
+  // Group by status
   const needsApproval = filtered.filter(r => r.status === 'needs_approval');
+  const autoHandled = filtered.filter(r => r.status === 'auto_replied');
+  const allOthers = filtered.filter(r => !['needs_approval', 'auto_replied'].includes(r.status));
+
+  // Stats
+  const stats = {
+    needsApproval: reviews.filter(r => r.status === 'needs_approval').length,
+    autoHandled: reviews.filter(r => r.status === 'auto_replied').length,
+    total: reviews.length,
+  };
+
+  // Run simulation
+  const runSimulation = () => {
+    setSimulating(true);
+    setTimeout(() => {
+      const result = simulateAutomation(reviews as any, defaultSettings, 'Your Business');
+      setReviews(result.processed as any);
+      setSimulating(false);
+    }, 1500);
+  };
+
+  // Regenerate with modification
+  const handleRegenerate = (reviewId: string, modification: string) => {
+    const review = reviews.find(r => r.id === reviewId);
+    if (!review) return;
+    
+    const newResponse = regenerateResponse(review.draftResponse || '', modification as any);
+    setReviews(reviews.map(r => 
+      r.id === reviewId ? { ...r, draftResponse: newResponse } : r
+    ));
+  };
+
+  // Approve draft
+  const handleApprove = (reviewId: string) => {
+    setReviews(reviews.map(r => 
+      r.id === reviewId ? { ...r, status: 'resolved' } : r
+    ));
+  };
 
   return (
     <div>
       <Navbar />
       <main className="container" style={{ padding: '40px 20px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '8px' }}>Reviews Inbox</h1>
-        <p className="text-muted" style={{ marginBottom: '24px' }}>AI-powered review analysis with response drafts</p>
+        <div className="flex flex-between" style={{ marginBottom: '16px' }}>
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '8px' }}>Reviews Inbox</h1>
+            <p className="text-muted">AI-powered review management with automation</p>
+          </div>
+          <button 
+            className="btn btn-primary" 
+            onClick={runSimulation}
+            disabled={simulating}
+          >
+            {simulating ? '⚙️ Running...' : '▶️ Simulate Automation'}
+          </button>
+        </div>
 
         {/* Helper Text */}
         <div style={{ 
@@ -118,18 +125,14 @@ export default function ReviewsPage() {
         </div>
 
         {/* Summary Row */}
-        <div className="grid grid-4 mb-4">
+        <div className="grid grid-3 mb-4">
           <div className="card" style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => setStatusFilter('needs_approval')}>
             <div style={{ fontSize: '28px', fontWeight: 800, color: stats.needsApproval > 0 ? '#f59e0b' : 'var(--text)' }}>{stats.needsApproval}</div>
-            <div className="text-muted" style={{ fontSize: '12px' }}>Needs Approval</div>
+            <div className="text-muted" style={{ fontSize: '12px' }}>⏳ Needs Approval</div>
           </div>
-          <div className="card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#6366f1' }}>{stats.autoRepliedToday}</div>
-            <div className="text-muted" style={{ fontSize: '12px' }}>Auto-Replied Today</div>
-          </div>
-          <div className="card" style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => setSeverityFilter('high')}>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#ef4444' }}>{stats.highSeverity}</div>
-            <div className="text-muted" style={{ fontSize: '12px' }}>High Severity</div>
+          <div className="card" style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => setStatusFilter('auto_replied')}>
+            <div style={{ fontSize: '28px', fontWeight: 800, color: '#6366f1' }}>{stats.autoHandled}</div>
+            <div className="text-muted" style={{ fontSize: '12px' }}>🤖 Auto-Handled</div>
           </div>
           <div className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '28px', fontWeight: 800 }}>{stats.total}</div>
@@ -137,7 +140,7 @@ export default function ReviewsPage() {
           </div>
         </div>
 
-        {/* Filters Row */}
+        {/* Filters */}
         <div className="card mb-4">
           <div className="flex gap-4 flex-between" style={{ flexWrap: 'wrap' }}>
             <input
@@ -148,7 +151,7 @@ export default function ReviewsPage() {
               style={{ minWidth: '200px' }}
             />
             
-            <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+            <div className="flex gap-2">
               <select value={starFilter as any} onChange={(e) => setStarFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value))} style={{ width: 'auto' }}>
                 <option value="all">All Stars</option>
                 <option value="5">5 Stars</option>
@@ -158,50 +161,47 @@ export default function ReviewsPage() {
                 <option value="1">1 Star</option>
               </select>
               
-              <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)} style={{ width: 'auto' }}>
-                <option value="all">All Severity</option>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-              
-              <select value={strategyFilter} onChange={(e) => setStrategyFilter(e.target.value)} style={{ width: 'auto' }}>
-                <option value="all">All Strategy</option>
-                <option value="recovery">Recovery</option>
-                <option value="appreciation">Appreciation</option>
-                <option value="clarification">Clarification</option>
-                <option value="defense">Defense</option>
-              </select>
-              
               <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ width: 'auto' }}>
                 <option value="all">All Status</option>
                 <option value="needs_approval">Needs Approval</option>
+                <option value="auto_replied">Auto-Handled</option>
                 <option value="draft">Draft</option>
-                <option value="auto_replied">Auto-Replied</option>
                 <option value="resolved">Resolved</option>
-                <option value="failed">Failed</option>
-              </select>
-              
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ width: 'auto' }}>
-                <option value="newest">Newest First</option>
-                <option value="severity">Highest Severity</option>
-                <option value="rating_desc">Highest Rating</option>
-                <option value="rating_asc">Lowest Rating</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Needs Approval Queue */}
+        {/* Needs Approval Section */}
         {needsApproval.length > 0 && (
           <div style={{ marginBottom: '40px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: '#f59e0b' }}>⚠️</span> Needs Approval ({needsApproval.length})
+              <span style={{ color: '#f59e0b' }}>⏳</span> Needs Approval ({needsApproval.length})
             </h2>
             
-            {needsApproval.slice(0, 3).map((review) => (
-              <ReviewCard key={review.id} review={review} compact />
+            {needsApproval.map((review) => (
+              <ReviewCard 
+                key={review.id} 
+                review={review}
+                onApprove={handleApprove}
+                onRegenerate={handleRegenerate}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Auto-Handled Section */}
+        {autoHandled.length > 0 && (
+          <div style={{ marginBottom: '40px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: '#6366f1' }}>🤖</span> Auto-Handled ({autoHandled.length})
+            </h2>
+            
+            {autoHandled.map((review) => (
+              <ReviewCard 
+                key={review.id} 
+                review={review}
+              />
             ))}
           </div>
         )}
@@ -214,19 +214,22 @@ export default function ReviewsPage() {
           
           {filtered.length > 0 ? (
             filtered.map((review) => (
-              <ReviewCard key={review.id} review={review} />
+              <ReviewCard 
+                key={review.id} 
+                review={review}
+                onApprove={handleApprove}
+                onRegenerate={handleRegenerate}
+              />
             ))
           ) : (
             <div className="card text-center" style={{ padding: '40px' }}>
-              <p className="text-muted" style={{ fontSize: '16px' }}>No reviews match your current filters</p>
+              <p className="text-muted">No reviews match your current filters</p>
               <button 
                 className="btn btn-secondary" 
                 style={{ marginTop: '16px' }}
                 onClick={() => {
                   setSearch('');
                   setStarFilter('all');
-                  setSeverityFilter('all');
-                  setStrategyFilter('all');
                   setStatusFilter('all');
                 }}
               >
@@ -240,37 +243,19 @@ export default function ReviewsPage() {
   );
 }
 
-function ReviewCard({ review, compact = false }: { review: Review; compact?: boolean }) {
+function ReviewCard({ 
+  review, 
+  onApprove, 
+  onRegenerate 
+}: { 
+  review: Review; 
+  onApprove?: (id: string) => void;
+  onRegenerate?: (id: string, modification: string) => void;
+}) {
   const [response, setResponse] = useState(review.draftResponse || '');
   
-  if (compact) {
-    return (
-      <div className="card" style={{ marginBottom: '12px', borderLeft: `4px solid ${severityColors[review.severity || 'low']}` }}>
-        <div className="flex flex-between">
-          <div className="flex gap-2" style={{ alignItems: 'center' }}>
-            <span style={{ color: '#f59e0b', fontSize: '14px' }}>{'★'.repeat(review.rating)}{'☆'.repeat(5-review.rating)}</span>
-            <span style={{ fontSize: '13px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {review.content}
-            </span>
-          </div>
-          <div className="flex gap-2" style={{ alignItems: 'center' }}>
-            <span style={{
-              padding: '2px 6px',
-              borderRadius: '4px',
-              fontSize: '10px',
-              fontWeight: 600,
-              background: `${severityColors[review.severity || 'low']}20`,
-              color: severityColors[review.severity || 'low'],
-            }}>
-              {(review.severity || 'low').toUpperCase()}
-            </span>
-            <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }}>Review Now</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  const status = statusLabels[review.status] || statusLabels.draft;
+  
   return (
     <div className="card" style={{ marginBottom: '16px', borderLeft: `4px solid ${severityColors[review.severity || 'low']}` }}>
       {/* Header */}
@@ -311,22 +296,19 @@ function ReviewCard({ review, compact = false }: { review: Review; compact?: boo
             {(review.severity || 'low').toUpperCase()}
           </span>
           <span style={{
-            padding: '2px 8px',
+            padding: '4px 10px',
             borderRadius: '4px',
-            fontSize: '11px',
+            fontSize: '12px',
             fontWeight: 600,
-            background: `${statusLabels[review.status].color}20`,
-            color: statusLabels[review.status].color,
+            background: `${status.color}20`,
+            color: status.color,
           }}>
-            {statusLabels[review.status].label}
+            {status.icon} {status.label}
           </span>
         </div>
       </div>
 
       {/* Review Content */}
-      {review.title && (
-        <div style={{ fontWeight: 600, marginBottom: '8px' }}>{review.title}</div>
-      )}
       <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '16px' }}>
         {review.content}
       </p>
@@ -341,7 +323,7 @@ function ReviewCard({ review, compact = false }: { review: Review; compact?: boo
       }}>
         <div style={{ fontSize: '13px', marginBottom: '12px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
           <span>
-            <strong style={{ color: '#22c55e' }}>Strategy:</strong> {strategyLabels[review.strategy || 'clarification']}
+            <strong style={{ color: '#22c55e' }}>Strategy:</strong> {(review.strategy || 'clarification').toUpperCase()}
           </span>
           <span>
             <strong style={{ color: severityColors[review.severity || 'low'] }}>Severity:</strong> {(review.severity || 'low').toUpperCase()}
@@ -353,13 +335,31 @@ function ReviewCard({ review, compact = false }: { review: Review; compact?: boo
         
         {/* Suggested AI Response */}
         <label style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-          Suggested AI Response:
+          Suggested Response:
         </label>
         <textarea 
           value={response}
           onChange={(e) => setResponse(e.target.value)}
-          style={{ width: '100%', minHeight: '100px', marginBottom: '12px', fontSize: '14px' }}
+          style={{ width: '100%', minHeight: '80px', marginBottom: '12px', fontSize: '14px' }}
         />
+        
+        {/* Regenerate buttons */}
+        {onRegenerate && (review.status === 'needs_approval' || review.status === 'draft') && (
+          <div className="flex gap-2" style={{ marginBottom: '12px', flexWrap: 'wrap' }}>
+            <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px' }} onClick={() => onRegenerate(review.id, 'more_professional')}>
+              More Professional
+            </button>
+            <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px' }} onClick={() => onRegenerate(review.id, 'more_friendly')}>
+              More Friendly
+            </button>
+            <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px' }} onClick={() => onRegenerate(review.id, 'shorter')}>
+              Shorter
+            </button>
+            <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px' }} onClick={() => onRegenerate(review.id, 'stronger_apology')}>
+              Stronger Apology
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Actions */}
@@ -367,12 +367,13 @@ function ReviewCard({ review, compact = false }: { review: Review; compact?: boo
         <div className="flex gap-2">
           {review.status === 'needs_approval' || review.status === 'draft' ? (
             <>
-              <button className="btn btn-primary">✓ Approve Draft</button>
+              {onApprove && (
+                <button className="btn btn-primary" onClick={() => onApprove(review.id)}>✓ Approve Draft</button>
+              )}
               <button className="btn btn-secondary">Save Response</button>
-              <button className="btn btn-secondary">↻ Regenerate</button>
             </>
           ) : review.status === 'auto_replied' ? (
-            <span style={{ color: '#6366f1', fontSize: '13px' }}>✓ Auto-replied</span>
+            <span style={{ color: '#6366f1', fontSize: '13px' }}>🤖 Auto-handled</span>
           ) : review.status === 'resolved' ? (
             <span style={{ color: 'var(--success)', fontSize: '13px' }}>✓ Resolved</span>
           ) : (
