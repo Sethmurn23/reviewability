@@ -1,0 +1,198 @@
+// Reviewability Database Schema
+// Run: npx prisma db push
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  avatarUrl      String?
+  supabaseId     String    @unique
+  stripeCustomerId String?
+  subscriptionStatus String? // active, inactive, past_due
+  subscriptionTier  String?  // free, pro, enterprise
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  businesses     Business[]
+  reviews        Review[]
+  insights       Insight[]
+}
+
+model Business {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  website     String?
+  logo        String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  industry    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  reviews     Review[]
+  automations Automation[]
+  settings    BusinessSettings?
+
+  @@index([userId])
+}
+
+model BusinessSettings {
+  id                    String   @id @default(cuid())
+  businessId            String   @unique
+  business             Business @relation(fields: [businessId], references: [id])
+  
+  // Auto-response settings
+  autoResponseEnabled  Boolean  @default(false)
+  responseTone         String   @default("professional") // professional, friendly, apologetic
+  
+  // AI settings
+  aiAnalysisEnabled   Boolean  @default(true)
+  sentimentThreshold  Float    @default(0.5)
+  
+  // Notification settings
+  emailAlerts         Boolean  @default(true)
+  slackWebhook        String?
+  
+  // Integration
+  yelpApiKey          String?
+  googleReviewLink    String?
+  trustpilotApiKey   String?
+  
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model Review {
+  id              String    @id @default(cuid())
+  businessId      String
+  business        Business  @relation(fields: [businessId], references: [id])
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  
+  // Review source data
+  source           String    // yelp, google, trustpilot, manual
+  sourceId        String?   // external ID from source
+  externalUrl     String?
+  
+  // Review content
+  authorName      String
+  authorAvatar    String?
+  rating          Int       // 1-5
+  title           String?
+  content         String    @db.Text
+  rawContent      String?   @db.Text // original before AI processing
+  
+  // AI Analysis (stored in JSONB)
+  sentiment        String?    // positive, negative, neutral
+  sentimentScore  Float?
+  topics          Json?      // array of topics detected
+  categories      Json?      // array of categories
+  intent           String?    // question, complaint, compliment, suggestion
+  urgency          String?    // high, medium, low
+  language         String?    // detected language
+  
+  // Response tracking
+  responseStatus   String?    // pending, generated, approved, sent, failed
+  responseContent  String?    @db.Text
+  responseGeneratedAt DateTime?
+  responseSentAt   DateTime?
+  
+  // Severity & Priority
+  severity         String?    // critical, high, medium, low
+  priorityScore    Float?     // 0-1 computed score
+  
+  // Timestamps
+  reviewDate       DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  // Embedding for similarity search (pgvector)
+  embedding        Float[]?   // @ignore in Prisma, use raw SQL for vector ops
+  
+  @@index([businessId])
+  @@index([rating])
+  @@index([sentiment])
+  @@index([createdAt])
+}
+
+model Automation {
+  id          String    @id @default(cuid())
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id])
+  
+  name        String
+  triggerType String    // review_received, sentiment_negative, rating_below, keyword_detected
+  triggerConfig Json?    // configuration for trigger
+  
+  actionType   String    // generate_response, send_webhook, create_task, send_email
+  actionConfig Json?    // configuration for action
+  
+  isActive    Boolean   @default(true)
+  lastTriggered DateTime?
+  runCount    Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([businessId])
+  @@index([isActive])
+}
+
+model Insight {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  
+  type        String    // summary, trend, anomaly, recommendation
+  title       String
+  content     String    @db.Text
+  
+  // Source references
+  businessId String?
+  dateRange   Json?     // { start, end }
+  
+  // AI-generated metadata
+  keywords    Json?
+  metrics     Json?
+  
+  isRead      Boolean   @default(false)
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model QueueJob {
+  id          String    @id @default(cuid())
+  name        String
+  type        String    // process_review, generate_insight, send_response
+  status      String    // pending, processing, completed, failed
+  
+  // Job data
+  data        Json?
+  result      Json?
+  error       String?   @db.Text
+  
+  // Timing
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  attempts    Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([status])
+  @@index([createdAt])
+}

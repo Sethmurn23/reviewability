@@ -1,0 +1,97 @@
+[
+  {
+    "id": "rev_001",
+    "businessId": "biz_001",
+    "source": "google",
+    "authorName": "Sarah Johnson",
+    "rating": 5,
+    "title": "Amazing service!",
+    "content": "The team went above and beyond to help me. Will definitely come back!",
+    "reviewDate": "2026-03-23T10:30:00Z",
+    "sentiment": "positive",
+    "urgency": "low"
+  },
+  {
+    "id": "rev_002",
+    "businessId": "biz_001",
+    "source": "yelp",
+    "authorName": "Mike Chen",
+    "rating": 2,
+    "title": "Disappointed",
+    "content": "Waited 45 minutes for my order. Cold food when it finally arrived. Very frustrating experience.",
+    "reviewDate": "2026-03-22T18:15:00Z",
+    "sentiment": "negative",
+    "urgency": "high"
+  },
+  {
+    "id": "rev_003",
+    "businessId": "biz_001",
+    "source": "trustpilot",
+    "authorName": "Emily Davis",
+    "rating": 4,
+    "title": "Good but could be better",
+    "content": "Great product overall. Shipping was fast but packaging could use improvement.",
+    "reviewDate": "2026-03-21T14:00:00Z",
+    "sentiment": "neutral",
+    "urgency": "low"
+  },
+  {
+    "id": "rev_004",
+    "businessId": "biz_001",
+    "source": "google",
+    "authorName": "James Wilson",
+    "rating": 1,
+    "title": "Never ordering again",
+    "content": "Wrong order 3 times. Complete waste of money. Customer service was rude.",
+    "reviewDate": "2026-03-20T09:45:00Z",
+    "sentiment": "negative",
+    "urgency": "critical"
+  },
+  {
+    "id": "rev_005",
+    "businessId": "biz_001",
+    "source": "yelp",
+    "authorName": "Lisa Anderson",
+    "rating": 5,
+    "title": "Perfect!",
+    "content": "Exactly what I needed. Fast delivery too! Highly recommend.",
+    "reviewDate": "2026-03-19T16:20:00Z",
+    "sentiment": "positive",
+    "urgency": "low"
+  },
+  {
+    "id": "rev_006",
+    "businessId": "biz_001",
+    "source": "facebook",
+    "authorName": "Robert Martinez",
+    "rating": 3,
+    "title": "Average experience",
+    "content": "It's okay. Nothing special but nothing wrong either. Would probably come back.",
+    "reviewDate": "2026-03-18T11:00:00Z",
+    "sentiment": "neutral",
+    "urgency": "low"
+  },
+  {
+    "id": "rev_007",
+    "businessId": "biz_001",
+    "source": "google",
+    "authorName": "Amanda White",
+    "rating": 4,
+    "content": "Really liked the staff. They were helpful and patient. Good experience overall.",
+    "reviewDate": "2026-03-17T13:30:00Z",
+    "sentiment": "positive",
+    "urgency": "low"
+  },
+  {
+    "id": "rev_008",
+    "businessId": "biz_001",
+    "source": "yelp",
+    "authorName": "Chris Brown",
+    "rating": 2,
+    "title": "Too expensive",
+    "content": "Prices have gone up significantly. Not worth it anymore. Finding alternatives.",
+    "reviewDate": "2026-03-16T19:00:00Z",
+    "sentiment": "negative",
+    "urgency": "medium"
+  }
+]
